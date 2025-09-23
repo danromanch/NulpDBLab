@@ -1,45 +1,59 @@
-from flask import Blueprint, request, jsonify
+from flask import request
+from flask_restx import Namespace, Resource, fields
 from src.novapost.service.department_service import DepartmentService
 from src.novapost.dao.department_dao import DepartmentDao
 from src import db
 
-department_bp = Blueprint('department_bp', __name__)
+api = Namespace('departments', description='Department operations')
+
 department_dao = DepartmentDao(db.session)
 department_service = DepartmentService(department_dao)
 
-@department_bp.route('/departments', methods=['POST'])
-def create_department_route():
-    data = request.get_json()
-    new_department = department_service.create_department(data['email'], data['phone'])
-    return jsonify(new_department.serialize()), 201
+# Define models for Swagger documentation
+department_model = api.model('Department', {
+    'id': fields.Integer(readonly=True, description='The department unique identifier'),
+    'email': fields.String(required=True, description='Department email'),
+    'phone': fields.String(required=True, description='Department phone number')
+})
 
-@department_bp.route('/departments', methods=['GET'])
-def get_all_departments_route():
-    departments = department_service.get_all_departments()
-    return jsonify([department.serialize() for department in departments])
+department_input = api.model('DepartmentInput', {
+    'email': fields.String(required=True, description='Department email'),
+    'phone': fields.String(required=True, description='Department phone number')
+})
 
-@department_bp.route('/departments/<int:id>', methods=['GET'])
-def get_department_route(id):
-    department = department_service.get_department(id)
-    return jsonify(department.serialize())
+@api.route('')
+class DepartmentList(Resource):
+    @api.doc('list_departments')
+    @api.response(200, 'Success', [department_model])
+    def get(self):
+        '''Get all departments'''
+        departments = department_service.get_all_departments()
+        return [department.serialize() for department in departments]
 
-@department_bp.route('/departments/<int:id>', methods=['PUT'])
-def update_department_route(id):
-    data = request.get_json()
-    department = department_service.update_department(id, data['email'], data['phone'])
-    return jsonify(department.serialize())
+    @api.doc('create_department')
+    @api.expect(department_input)
+    @api.response(201, 'Created', department_model)
+    def post(self):
+        '''Create a new department'''
+        data = request.get_json()
+        new_department = department_service.create_department(data['email'], data['phone'])
+        return new_department.serialize(), 201
 
-@department_bp.route('/departments/<int:id>', methods=['DELETE'])
-def delete_department_route(id):
-    department_service.delete_department(id)
-    return '', 204
+@api.route('/<int:id>')
+@api.param('id', 'The department identifier')
+class Department(Resource):
+    @api.doc('get_department')
+    @api.response(200, 'Success', department_model)
+    def get(self, id):
+        '''Get a specific department by ID'''
+        department = department_service.get_department(id)
+        return department.serialize()
 
-@department_bp.route('/departments/operators/<int:id>', methods=['GET'])
-def get_operators_by_department_route(id):
-    operators = department_service.get_operators_by_department(id)
-    return jsonify([operator.serialize() for operator in operators])
-
-@department_bp.route('/departments/parcel/<int:id>', methods=['GET'])
-def get_parcels_by_departments_route(id):
-    parcels = department_service.get_parcels_by_departments(id)
-    return jsonify([parcel.serialize() for parcel in parcels])
+    @api.doc('update_department')
+    @api.expect(department_input)
+    @api.response(200, 'Success', department_model)
+    def put(self, id):
+        '''Update a department'''
+        data = request.get_json()
+        department = department_service.update_department(id, data['email'], data['phone'])
+        return department.serialize()
