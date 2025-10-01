@@ -38,6 +38,6 @@ def create_app():
 
     @app.route('/ping')
     def hello_world():
-        return 'pong'
+        return 'puc'
 
     return app
