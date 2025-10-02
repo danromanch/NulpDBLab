@@ -72,6 +72,8 @@ class Parcel(Resource):
         '''Update a parcel'''
         data = request.get_json()
         parcel = parcel_service.update_parcel(id, **data)
+        if not parcel:
+            api.abort(404, 'parcel not found')
         return parcel.serialize()
 
     @api.doc('delete_parcel')

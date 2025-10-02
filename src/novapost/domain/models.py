@@ -112,7 +112,7 @@ class Operator(Base):
             'id': self.id,
             'name': self.name,
             'surname': self.surname,
-            'birth_date': self.birth_date
+            'birth_date': self.birth_date.isoformat() if self.birth_date is not None else None
         }
 
 
