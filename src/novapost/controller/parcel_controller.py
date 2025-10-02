@@ -2,6 +2,7 @@ from flask import request
 from flask_restx import Namespace, Resource, fields
 from src.novapost.service.parcel_service import ParcelService
 from src.novapost.dao.parcel_dao import ParcelDao
+from src.novapost.domain.models import Department
 from src import db
 
 api = Namespace('parcels', description='Parcel operations')
@@ -15,14 +16,16 @@ parcel_model = api.model('Parcel', {
     'item': fields.String(required=True, description='Item description'),
     'weight': fields.Integer(required=True, description='Weight in grams'),
     'size': fields.Integer(required=True, description='Size in cubic centimeters'),
-    'is_paid': fields.Boolean(required=True, description='Payment status')
+    'is_paid': fields.Boolean(required=True, description='Payment status'),
+    'department_id': fields.Integer(required=True, description='Department id')
 })
 
 parcel_input = api.model('ParcelInput', {
     'item': fields.String(required=True, description='Item description'),
     'weight': fields.Integer(required=True, description='Weight in grams'),
     'size': fields.Integer(required=True, description='Size in cubic centimeters'),
-    'is_paid': fields.Boolean(required=True, description='Payment status')
+    'is_paid': fields.Boolean(required=True, description='Payment status'),
+    'department_id': fields.Integer(required=True, description='Department id')
 })
 
 @api.route('')
@@ -40,7 +43,16 @@ class ParcelList(Resource):
     def post(self):
         '''Create a new parcel'''
         data = request.get_json()
-        new_parcel = parcel_service.create_parcel(data['item'], data['weight'], data['size'], data['is_paid'])
+        # Validate required field
+        if 'department_id' not in data:
+            api.abort(400, 'department_id is required')
+
+        # Ensure the department exists
+        department = parcel_dao.session.query(Department).get(data['department_id'])
+        if not department:
+            api.abort(400, 'department not found')
+
+        new_parcel = parcel_service.create_parcel(data['item'], data['weight'], data['size'], data['is_paid'], data['department_id'])
         return new_parcel.serialize(), 201
 
 @api.route('/<int:id>')

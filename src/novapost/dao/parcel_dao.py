@@ -6,7 +6,7 @@ class ParcelDao:
         self.session = session
 
     def create_parcel(self, item, weight, size, is_paid, department_id):
-        new_parcel = Parcel(item=item, weight=weight, size=size, is_paid=is_paid)
+        new_parcel = Parcel(item=item, weight=weight, size=size, is_paid=is_paid, department_id=department_id)
         self.session.add(new_parcel)
         self.session.commit()
         return new_parcel

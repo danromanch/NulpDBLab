@@ -124,6 +124,9 @@ class Parcel(Base):
     weight = Column(Integer, nullable=False)
     size = Column(Integer, nullable=False)
     is_paid = Column(TINYINT, nullable=False)
+    department_id = Column(ForeignKey('department.id'), nullable=False, index=True)
+
+    department = relationship('Department')
 
     def serialize(self):
         return {
@@ -132,6 +135,7 @@ class Parcel(Base):
             'weight': self.weight,
             'size': self.size,
             'is_paid': self.is_paid,
+            'department_id': self.department_id,
         }
 
 

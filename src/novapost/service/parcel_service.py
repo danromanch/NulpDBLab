@@ -4,9 +4,9 @@ class ParcelService:
     def __init__(self, parcel_dao: ParcelDao):
         self.parcel_dao = parcel_dao
 
-    def create_parcel(self, item: str, weight: int, size: int, is_paid: bool):
-        """Create a new parcel."""
-        return self.parcel_dao.create_parcel(item, weight, size, is_paid)
+    def create_parcel(self, item: str, weight: int, size: int, is_paid: bool, department_id: int):
+        """Create a new parcel with associated department."""
+        return self.parcel_dao.create_parcel(item, weight, size, is_paid, department_id)
 
     def get_all_parcels(self):
         """Retrieve all parcels."""
