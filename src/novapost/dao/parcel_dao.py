@@ -1,5 +1,5 @@
-from src.novapost.domain.models import Parcel, Department, Transfer
-from src import db
+from src.novapost.domain.models import Parcel, Department, Transfer, Delivery
+from sqlalchemy.exc import IntegrityError
 
 class ParcelDao:
     def __init__(self, session):
@@ -27,9 +27,23 @@ class ParcelDao:
 
     def delete_parcel(self, id):
         parcel = self.session.query(Parcel).get(id)
-        if parcel:
-            self.session.delete(parcel)
+        if not parcel:
+            return None
+
+        # Check for related deliveries or transfers to avoid FK constraint errors
+        related_delivery = self.session.query(Delivery).filter(Delivery.parcel_id == id).first()
+        related_transfer = self.session.query(Transfer).filter(Transfer.parcel_id == id).first()
+        if related_delivery or related_transfer:
+            # Raise a clear Python exception the controller can catch and convert to a 409
+            raise ValueError('Parcel cannot be deleted because related deliveries or transfers exist')
+
+        self.session.delete(parcel)
+        try:
             self.session.commit()
+        except IntegrityError:
+            # Convert DB integrity errors into a clear application error
+            self.session.rollback()
+            raise ValueError('Parcel cannot be deleted due to existing related records (FK constraint)')
         return parcel
 
     def get_parcels_by_sender_department(self, id):

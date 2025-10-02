@@ -78,7 +78,16 @@ class Parcel(Resource):
     @api.response(204, 'Parcel deleted')
     def delete(self, id):
         '''Delete a parcel'''
-        parcel_service.delete_parcel(id)
+        parcel = None
+        try:
+            parcel = parcel_service.delete_parcel(id)
+        except ValueError as e:
+            # Conflict due to related rows (deliveries/transfers)
+            api.abort(409, str(e))
+
+        if not parcel:
+            api.abort(404, 'parcel not found')
+
         return '', 204
 
 @api.route('/department/<int:id>')
