@@ -175,5 +175,5 @@ class Transfer(Base):
             'sender_id': self.sender_id,
             'reciever_id': self.reciever_id,
             'parcel_id': self.parcel_id,
-            'date': self.date.isoformat()
+            'date': self.date.isoformat() if self.date is not None else None
         }

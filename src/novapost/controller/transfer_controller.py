@@ -15,14 +15,14 @@ transfer_model = api.model('Transfer', {
     'sender_id': fields.Integer(required=True, description='Sender department ID'),
     'reciever_id': fields.Integer(required=True, description='Receiver department ID'),
     'parcel_id': fields.Integer(required=True, description='Parcel ID'),
-    'date': fields.String(required=True, description='Transfer date (ISO format)')
+    'date': fields.String(required=False, description='Transfer date (ISO format)')
 })
 
 transfer_input = api.model('TransferInput', {
     'sender_id': fields.Integer(required=True, description='Sender department ID'),
     'reciever_id': fields.Integer(required=True, description='Receiver department ID'),
     'parcel_id': fields.Integer(required=True, description='Parcel ID'),
-    'date': fields.String(required=True, description='Transfer date (ISO format)')
+    'date': fields.String(required=False, description='Transfer date (ISO format)')
 })
 
 @api.route('')
@@ -40,7 +40,20 @@ class TransferList(Resource):
     def post(self):
         '''Create a new transfer'''
         data = request.get_json()
-        new_transfer = transfer_service.create_transfer(data['sender_id'], data['reciever_id'], data['parcel_id'], data['date'])
+        # Ensure JSON body and required fields are present
+        if data is None:
+            api.abort(400, 'JSON body is required')
+
+        for field in ('sender_id', 'reciever_id', 'parcel_id'):
+            if field not in data:
+                api.abort(400, f"{field} is required")
+        # date is optional; pass None if not provided and let service default to today
+        date = data.get('date') if data is not None else None
+        try:
+            new_transfer = transfer_service.create_transfer(data['sender_id'], data['reciever_id'], data['parcel_id'], date)
+        except ValueError as e:
+            api.abort(400, str(e))
+
         return new_transfer.serialize(), 201
 
 @api.route('/<int:id>')
